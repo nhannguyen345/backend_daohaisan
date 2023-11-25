@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
-const { upload } = require("../config/setUpFirebase");
+const { upload } = require("../config/setupfirebase");
 const validateToken = require("../config/validateTokenHandler");
 
 //GET --- api/products

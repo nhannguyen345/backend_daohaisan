@@ -1,6 +1,6 @@
 const { auto_create_id_product } = require("../config/generateId.js");
 const Product = require("../models/Product.js");
-const { urlFromFireBase } = require("../config/setUpFirebase.js");
+const { urlFromFireBase } = require("../config/setupfirebase.js");
 
 const getAllProducts = async (req, res, next) => {
   try {

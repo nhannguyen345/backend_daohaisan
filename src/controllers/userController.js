@@ -3,7 +3,7 @@ const { auto_create_id_user } = require("../config/generateId");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const ResetCode = require("../models/ResetCode");
-const { urlFromFireBase } = require("../config/setUpFirebase.js");
+const { urlFromFireBase } = require("../config/setupfirebase.js");
 const { transporter, mailOptions } = require("../config/setUpMailer.js");
 const randomCode = require("../config/generateResetCode.js");
 
