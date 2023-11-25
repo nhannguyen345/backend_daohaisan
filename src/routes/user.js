@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const userController = require("../controllers/userController");
 const orderController = require("../controllers/orderController");
-const { upload } = require("../config/setUpFirebase");
+const { upload } = require("../config/setupfirebase");
 const validateToken = require("../config/validateTokenHandler");
 
 //[GET] api/users
