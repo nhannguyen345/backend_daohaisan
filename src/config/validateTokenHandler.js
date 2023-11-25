@@ -23,6 +23,10 @@ const validateToken = async (req, res, next) => {
           message: "Người dùng chưa thực hiện việc xác thực hoặc mã đã bị mất!",
         });
       }
+    } else {
+      return res.status(401).json({
+        message: "Người dùng chưa thực hiện việc xác thực hoặc mã đã bị mất!",
+      });
     }
   } catch (err) {
     console.log(err);
