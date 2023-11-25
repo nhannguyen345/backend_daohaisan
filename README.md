@@ -309,6 +309,7 @@ Các trường email,phone là duy nhất
 - **Phương thức:** PUT
 - **ENDPOINT:** `/api/order`
 - **Body:** Dữ liệu gồm id đơn hàng và trạng thái của đơn hàng.
+- **Kết quả trả về:**
   ```json
   {
     "id": "DH0003",
@@ -332,3 +333,109 @@ Các trường email,phone là duy nhất
   - `size`: là số sản phẩm mỗi trang (không bắt buộc, nếu không truyền thì mặc định = 6)
   - `category`: là loại sản phẩm (không bắt buộc, nếu không truyền thì sẽ lấy tất cả sản phẩm)
   - `Example endpoint:`: /api/product?page=1&size=10&category=Ốc
+
+## Các API nằm trong chức năng quên mật khẩu (22 - 24):
+
+### 22. Kiểm tra email
+
+- **Yêu cầu API:** Thực hiện xác thực email người dùng đã gửi
+- **Phương thức:** POST
+- **ENDPOINT:** /api/resetpass/checkMail
+- **Body:** Dữ liệu bao gồm email của người dùng
+  ```json
+  {
+    "email": "nhan123@gmail.com"
+  }
+  ```
+- **Kết quả trả về(thành công):**
+  ```json
+  {
+    " mesage": "Đã gửi mã đến email! Mã có thời gian là 3 phút! Vui lòng nhập vào trước thời gian!"
+  }
+  ```
+
+### 23. Kiểm tra mã xác nhận
+
+- **Yêu cầu API:** Thực hiện kiểm tra mã xác nhận từ người dùng
+- **Phương thức:** POST
+- **ENDPOINT:** /api/resetpass/checkResetCode
+- **Body:** Dữ liệu bao gồm email và mã xác nhận
+  ```json
+  {
+    "email": "nhan123@gmail.com",
+    "resetcode": "C8bXdRv2"
+  }
+  ```
+- **Kết quả trả về(thành công):**
+  ```json
+  {
+    "message": "Xác nhận thành công!",
+    "idOfUser": "KH0016",
+    "idOfResetCode": "6g5fhlfjr777474ddsx"
+  }
+  ```
+
+### 24. Cập nhật mật khẩu
+
+- **Yêu cầu API:** Thực hiện cập nhật mật khẩu người dùng
+- **Phương thức:** PUT
+- **ENDPOINT:** /api/resetpass/
+- **Body:** Dữ liệu bao gồm id người dùng, id của mã xác nhận và mật khẩu mới
+  ```json
+  {
+    "id": "KH0016",
+    "idresetcode": "65607fe7d1feb3f817f96881",
+    "newpass": "nhan12345@!"
+  }
+  ```
+- **Kết quả trả về(thành công):**
+  ```json
+  {
+    "message": "Đã đổi mật khẩu thành công!"
+  }
+  ```
+
+---
+
+**_Chú ý web hiện tại đã thêm tính năng xác thực thông qua jsonwebtoken, ngoại trừ API: đăng ký, đăng nhập, lấy tất cả sản phẩm, xem chi tiết xản phẩm, tìm kiếm sản phẩm, phân trang sản phẩm và đổi mật khẩu ở khách hàng thì các API còn lại đều phải gửi thêm jsonwebtoken _**
+
+```Ví dụ về cách sử dụng jsonwebtoken ở client:
+{
+  import axios from 'axios';
+
+  // Hàm để thêm JWT vào tiêu đề của yêu cầu
+  const addJwtToHeaders = () => {
+    // Lấy JWT từ nơi bạn lưu trữ nó (ví dụ: localStorage)
+    const jwt = localStorage.getItem('jwt');
+
+    // Tạo một instance của Axios với các cài đặt mặc định
+    const axiosInstance = axios.create();
+
+    // Thêm JWT vào tiêu đề của mỗi yêu cầu
+    axiosInstance.interceptors.request.use(config => {
+      if (jwt) {
+        config.headers.Authorization = `Bearer ${jwt}`;
+      }
+      return config;
+    });
+
+    return axiosInstance;
+  };
+
+  // Sử dụng hàm để tạo instance Axios có sẵn với JWT trong tiêu đề
+  const axiosWithJwt = addJwtToHeaders();
+
+  // Sử dụng instance đã tạo
+  axiosWithJwt.get('https://example.com/api/data')
+    .then(response => {
+      // Xử lý response
+      console.log(response.data);
+    })
+    .catch(error => {
+      // Xử lý error
+      console.error(error);
+    });
+}
+```
+
+---

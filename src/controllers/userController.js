@@ -2,7 +2,10 @@ const jwt = require("jsonwebtoken");
 const { auto_create_id_user } = require("../config/generateId");
 const Product = require("../models/Product");
 const User = require("../models/User");
-const { urlFromFireBase } = require("../config/setupfirebase.js");
+const ResetCode = require("../models/ResetCode");
+const { urlFromFireBase } = require("../config/setUpFirebase.js");
+const { transporter, mailOptions } = require("../config/setUpMailer.js");
+const randomCode = require("../config/generateResetCode.js");
 
 const getAllUser = (req, res) => {
   User.find()
@@ -239,6 +242,7 @@ const addProductToCart = async (req, res) => {
     res.status(500).json({ message: "Có lỗi xảy ra", error: err.message });
   }
 };
+
 const removeProductFromCart = async (req, res) => {
   try {
     const { userId, productId } = req.body;
@@ -268,6 +272,127 @@ const removeProductFromCart = async (req, res) => {
   }
 };
 
+// Xử lý xác thực email và gửi mã xác nhận
+const checkMailAndSendCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Tài khoản email không tồn tại! Vui lòng kiểm tra lại!",
+      });
+    }
+
+    const currentDate = new Date();
+    const expirationDate = new Date(currentDate);
+    // Thêm 3 phút vào ngày mới
+    expirationDate.setMinutes(currentDate.getMinutes() + 3);
+
+    const newResetCode = await ResetCode.create({
+      user_id: user.id,
+      code: randomCode,
+      expirationDate,
+    });
+
+    if (!newResetCode) {
+      return res.status(500).json({ message: "Máy chủ xảy ra!" });
+    }
+
+    const sendM = await transporter.sendMail(
+      mailOptions(email, newResetCode.code)
+    );
+    console.log("Send email successfully!");
+    return res.status(200).json({
+      mesage:
+        "Đã gửi mã đến email! Mã có thời gian là 3 phút! Vui lòng nhập vào trước thời gian!",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Có lỗi xảy ra", error: err.message });
+  }
+};
+
+// Nhận mã xác nhận và kiểm tra
+const checkResetCode = async (req, res) => {
+  try {
+    const { email, resetcode } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Tài khoản Email này không tồn tại! Vui lòng kiểm tra lại",
+      });
+    }
+    const resetCodeInDB = await ResetCode.find({ user_id: user.id })
+      .sort({ _id: -1 })
+      .limit(1);
+    if (resetCodeInDB.lenght) {
+      return res.status(400).json({
+        message:
+          "Có lỗi xảy ra! Xin vui lòng thực hiện theo đúng trình tự: xác nhận email -> nhận mã -> nhập mã!",
+      });
+    }
+    // so sánh mã gửi của khách hàng và trong database
+    if (resetcode.toString() !== resetCodeInDB[0].code) {
+      console.log(resetcode, resetCodeInDB);
+      return res
+        .status(400)
+        .json({ mesage: "Mã xác nhận nhập không chính xác!" });
+    }
+
+    // kiểm tra mã đã hết hạn hay chưa
+    const currentDate = new Date();
+    if (resetCodeInDB[0].expirationDate < currentDate) {
+      return res.status(400).json({ mesage: "Mã xác nhận đã hết hạn!" });
+    }
+    return res.status(200).json({
+      message: "Xác nhận thành công!",
+      idOfUser: user.id,
+      idOfResetCode: resetCodeInDB[0]._id,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Có lỗi xảy ra", error: err.message });
+  }
+};
+
+// Đổi mật khẩu
+const changePassword = async (req, res) => {
+  const { id, idresetcode, newpass } = req.body;
+
+  try {
+    const resetCode = await ResetCode.findById(idresetcode);
+    // Kiểm tra mã có tồn tại hay không
+    if (!resetCode) {
+      return res.status(404).json({ message: "Mã xác nhận không hợp lệ!" });
+    }
+    // Set thời gian cho phép người dùng cập nhật mật khẩu là 10 phút so với ngày hết hạn của mã
+    const setDateChangePass = resetCode.expirationDate;
+    setDateChangePass.setMinutes(setDateChangePass.getMinutes() + 10);
+    const currentDate = new Date();
+    console.log(setDateChangePass);
+    if (setDateChangePass < currentDate) {
+      return res.status(400).json({
+        message:
+          "Đã hết thời gian đổi mật khẩu! Vui lòng thực hiện lại các bước để thực hiện!",
+      });
+    }
+    const newUserPass = await User.findOneAndUpdate(
+      { id: id },
+      { $set: { password: newpass } },
+      { new: true }
+    );
+    if (!newUserPass) {
+      return res
+        .status(404)
+        .json({ message: "Lỗi! Không tìm thấy người dùng này!" });
+    }
+
+    return res.status(201).json({ message: "Đã đổi mật khẩu thành công!" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Có lỗi xảy ra", error: err.message });
+  }
+};
 module.exports = {
   registerUser,
   getUser,
@@ -278,4 +403,7 @@ module.exports = {
   removeProductFromCart,
   getCart,
   getAllCustomer,
+  checkMailAndSendCode,
+  checkResetCode,
+  changePassword,
 };
