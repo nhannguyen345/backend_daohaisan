@@ -192,20 +192,12 @@ const getPanigationProduct = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   try {
-    let {
-      id,
-      name,
-      category,
-      description,
-      imageUrl,
-      weight,
-      price,
-      available,
-    } = req.body;
+    let { id, name, category, description, image, weight, price, available } =
+      req.body;
 
     if (req.file) {
       console.log("Có ảnh tải lên");
-      imageUrl = await urlFromFireBase(req.file);
+      image = await urlFromFireBase(req.file);
     }
 
     let newUpdateProduct = await Product.findOneAndUpdate(
@@ -214,7 +206,7 @@ const updateProduct = async (req, res, next) => {
         name,
         category,
         description,
-        imageUrl: imageUrl,
+        imageUrl: image,
         weight,
         price,
         available,

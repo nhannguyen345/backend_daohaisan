@@ -105,6 +105,7 @@ const loginUser = async (req, res) => {
           id: user.id,
           email: user.email,
           fullname: user.fullname,
+          isAdmin: user.isAdmin,
         },
       },
       process.env.ACCESS_TOKEN_SECRET,
@@ -123,28 +124,35 @@ const loginUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const {
-      userId,
-      fullname,
-      email,
-      password,
-      phone,
-      avatarUrl,
-      gender,
-      address,
-    } = req.body;
-    const user = await User.findOne({ id: userId });
+    const { fullname, email, phone, gender, address } = req.body;
+    const user = await User.findOne({ id: req.user.id });
     if (!user) return res.status(404).json({ message: "User not fount" });
     user.fullname = fullname;
     user.email = email;
-    user.password = password;
     user.phone = phone;
     user.avatarUrl = await urlFromFireBase(req.file);
     user.gender = gender;
     user.address = address;
     const newUser = await user.save();
     res.status(200).json({
-      message: "Cập nhập sản phẩm thành công",
+      message: "Cập nhập thành công",
+      data: { newUser: newUser },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Có lỗi xảy ra", err: err.message });
+  }
+};
+
+const updatePasswordUser = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findOne({ id: req.user.id });
+    if (!user) return res.status(404).json({ message: "User not fount" });
+    user.password = password;
+    const newUser = await user.save();
+    res.status(200).json({
+      message: "Cập nhập mật khẩu thành công",
       data: { newUser: newUser },
     });
   } catch (err) {
@@ -400,6 +408,7 @@ module.exports = {
   addProductToCart,
   loginUser,
   updateUser,
+  updatePasswordUser,
   removeProductFromCart,
   getCart,
   getAllCustomer,
