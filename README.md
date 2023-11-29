@@ -4,8 +4,48 @@ Domain: `daohaisan.azurewebsites.net/`
 
 **To start Server. Please wait a while for your first visit.**
 
-Đối với các route cần xác thực => Gửi token lên bằng headers với key là `authorization`. Token phải bắt đầu bằng 'Bearer '.
-(Hiện tại chưa cần xác thực)
+**_ Chú ý web hiện tại đã thêm tính năng xác thực thông qua jsonwebtoken, ngoại trừ API: đăng ký, đăng nhập, lấy tất cả sản phẩm, xem chi tiết xản phẩm, tìm kiếm sản phẩm, phân trang sản phẩm và đổi mật khẩu ở khách hàng thì các API còn lại đều phải gửi thêm mã jsonwebtoken _**
+
+```Ví dụ về cách sử dụng jsonwebtoken ở client:
+{
+  import axios from 'axios';
+
+  // Hàm để thêm JWT vào tiêu đề của yêu cầu
+  const addJwtToHeaders = () => {
+    // Lấy JWT từ nơi bạn lưu trữ nó (ví dụ: localStorage)
+    const jwt = localStorage.getItem('jwt');
+
+    // Tạo một instance của Axios với các cài đặt mặc định
+    const axiosInstance = axios.create();
+
+    // Thêm JWT vào tiêu đề của mỗi yêu cầu
+    axiosInstance.interceptors.request.use(config => {
+      if (jwt) {
+        config.headers.Authorization = `Bearer ${jwt}`;
+      }
+      return config;
+    });
+
+    return axiosInstance;
+  };
+
+  // Sử dụng hàm để tạo instance Axios có sẵn với JWT trong tiêu đề
+  const axiosWithJwt = addJwtToHeaders();
+
+  // Sử dụng instance đã tạo
+  axiosWithJwt.get('https://example.com/api/data')
+    .then(response => {
+      // Xử lý response
+      console.log(response.data);
+    })
+    .catch(error => {
+      // Xử lý error
+      console.error(error);
+    });
+}
+```
+
+---
 
 ## Format trả về
 
@@ -42,6 +82,8 @@ Ví dụ về lỗi
 ```
 
 ---
+
+## API về sản phẩm (product):
 
 ### 1. Lấy tất cả sản phẩm
 
@@ -113,19 +155,40 @@ Ví dụ dữ liệu form data:
 - **Phương thức:** DELETE
 - **ENDPOINT:** `/api/product/SP0015`
 
-### 6. Lấy danh sách tất cả User (Bao gồm cả Admin)
+### 6. Xem thông chi tiết sản phẩm
+
+- **Yêu cầu API:** Lấy thông tin chi tiết sản phẩm thông qua mã sản phẩm
+- **Phương thức:** GET
+- **ENDPOINT:** `/api/admin/products/SP0001`
+
+### 7. Phân trang sản phẩm
+
+- **Yêu cầu API:** Lấy sản phẩm thông qua số trang, số lượng muốn lấy (nên để cố định), tên category nếu có
+- **Phương thức:** GET (chú ý các tham số được để theo kiểu query chứ không phải params)
+- **ENDPOINT:** `/api/product`
+  Giải thích tham số:
+  - `page`:(không bắt buộc, giá trị default = 1) là trang muốn tìm
+  - `size`: là số sản phẩm mỗi trang (không bắt buộc, nếu không truyền thì mặc định = 6)
+  - `category`: là loại sản phẩm (không bắt buộc, nếu không truyền thì sẽ lấy tất cả sản phẩm)
+  - `Example endpoint:`: /api/product?page=1&size=10&category=Ốc
+
+---
+
+## API về người dùng (user):
+
+### 8. Lấy danh sách tất cả User (Bao gồm cả Admin)
 
 - **Yêu cầu API:** Lấy danh sách tất cả người dùng, bao gồm cả người dùng quản trị (Admin).
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/users`
 
-### 7. Lấy danh sách tất cả Khách hàng
+### 9. Lấy danh sách tất cả Khách hàng
 
 - **Yêu cầu API:** Lấy danh sách tất cả khách hàng.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/customers`
 
-### 8. Tạo mới một tài khoản User
+### 10. Tạo mới một tài khoản User
 
 - **Yêu cầu API:** Tạo một tài khoản người dùng mới với thông tin cụ thể.
 - **Phương thức:** POST
@@ -147,7 +210,7 @@ Các trường email,phone là duy nhất
 }
 ```
 
-### 9. Đăng nhập vào một tài khoản User
+### 11. Đăng nhập vào một tài khoản User
 
 - **Yêu cầu API:** Đăng nhập vào tài khoản của người dùng.
 - **Phương thức:** POST
@@ -193,14 +256,14 @@ Các trường email,phone là duy nhất
   }
   ````
 
-### 10. Lấy thông tin khách hàng qua id
+### 12. Lấy thông tin khách hàng qua id
 
 - **Yêu cầu API:** Lấy thông tin của khách hàng thông qua id.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/user/:id`
   Ví dụ: https://daohaisan.azurewebsites.net/api/user/KH0001
 
-### 11. Cập nhật thông tin một User
+### 13. Cập nhật thông tin một User
 
 - **Yêu cầu API:** Cập nhật thông tin của một người dùng dựa trên ID.
 - **Phương thức:** PUT
@@ -223,7 +286,7 @@ Các trường email,phone là duy nhất
   - `gender`: "123"
   - `address`: "123"
 
-### 12. Cập nhật mật khẩu trong phần quản lý my account
+### 14. Cập nhật mật khẩu trong phần quản lý my account
 
 - **Yêu cầu API:** Thực hiện cập nhật mật khẩu người dùng trong phần quản lý account
 - **Phương thức:** PUT
@@ -261,13 +324,17 @@ Các trường email,phone là duy nhất
   }
   ```
 
-### 13. Lấy thông tin giỏ hàng của một User
+---
+
+## API về giỏ hàng (cart)
+
+### 15. Lấy thông tin giỏ hàng của một User
 
 - **Yêu cầu API:** Lấy thông tin giỏ hàng của một người dùng dựa trên ID người dùng.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/user/cart/KH0001`
 
-### 14. Thêm 1 sản phẩm vào giỏ hàng của 1 user
+### 16. Thêm 1 sản phẩm vào giỏ hàng của 1 user
 
 - **Yêu cầu API:** Thêm một sản phẩm vào giỏ hàng của một người dùng.
 - **Phương thức:** POST
@@ -280,7 +347,11 @@ Các trường email,phone là duy nhất
   }
   ```
 
-### 15. Xóa 1 sản phẩm ra khỏi giỏ hàng của 1 user
+---
+
+## API về đơn hàng (order):
+
+### 17. Xóa 1 sản phẩm ra khỏi giỏ hàng của 1 user
 
 - **Yêu cầu API:** Xóa một sản phẩm khỏi giỏ hàng của một người dùng dựa trên ID sản phẩm.
 - **Phương thức:** PUT
@@ -293,7 +364,7 @@ Các trường email,phone là duy nhất
   }
   ```
 
-### 16. Tạo mới một đơn hàng
+### 18. Tạo mới một đơn hàng
 
 - **Yêu cầu API:** Tạo một đơn đặt hàng mới với thông tin cụ thể.
 - **Phương thức:** POST
@@ -319,25 +390,25 @@ Các trường email,phone là duy nhất
   }
   ```
 
-### 17. Lấy danh sách tất cả đơn đặt hàng
+### 19. Lấy danh sách tất cả đơn đặt hàng
 
 - **Yêu cầu API:** Lấy danh sách tất cả đơn đặt hàng.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/orders`
 
-### 18. Lấy thông tin đơn hàng của 1 user
+### 20. Lấy thông tin đơn hàng của 1 user
 
 - **Yêu cầu API:** Lấy danh sách các đơn đặt hàng dựa trên ID người dùng.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/orders/KH0002`
 
-### 19. Lấy thông tin đơn hàng theo id của chính nó
+### 21. Lấy thông tin đơn hàng theo id của chính nó
 
 - **Yêu cầu API:** Lấy đơn đặt hàng dựa trên ID của chính nó.
 - **Phương thức:** GET
 - **ENDPOINT:** `/api/order/DH0002`
 
-### 20. Cập nhật trạng thái đơn hàng
+### 22. Cập nhật trạng thái đơn hàng
 
 - **Yêu cầu API:** Cập nhật trạng thái đơn đặt hàng.
 - **Phương thức:** PUT
@@ -351,24 +422,7 @@ Các trường email,phone là duy nhất
   }
   ```
 
-### 21. Xem thông chi tiết sản phẩm
-
-- **Yêu cầu API:** Lấy thông tin chi tiết sản phẩm thông qua mã sản phẩm
-- **Phương thức:** GET
-- **ENDPOINT:** `/api/admin/products/SP0001`
-
-### 22. Phân trang sản phẩm
-
-- **Yêu cầu API:** Lấy sản phẩm thông qua số trang, số lượng muốn lấy (nên để cố định), tên category nếu có
-- **Phương thức:** GET (chú ý các tham số được để theo kiểu query chứ không phải params)
-- **ENDPOINT:** `/api/product`
-  Giải thích tham số:
-  - `page`:(không bắt buộc, giá trị default = 1) là trang muốn tìm
-  - `size`: là số sản phẩm mỗi trang (không bắt buộc, nếu không truyền thì mặc định = 6)
-  - `category`: là loại sản phẩm (không bắt buộc, nếu không truyền thì sẽ lấy tất cả sản phẩm)
-  - `Example endpoint:`: /api/product?page=1&size=10&category=Ốc
-
-## Các API nằm trong chức năng quên mật khẩu (22 - 24):
+## Các API nằm trong chức năng quên mật khẩu (23 - 25):
 
 ### 23. Kiểm tra email
 
@@ -428,48 +482,5 @@ Các trường email,phone là duy nhất
     "message": "Đã đổi mật khẩu thành công!"
   }
   ```
-
----
-
-**_Chú ý web hiện tại đã thêm tính năng xác thực thông qua jsonwebtoken, ngoại trừ API: đăng ký, đăng nhập, lấy tất cả sản phẩm, xem chi tiết xản phẩm, tìm kiếm sản phẩm, phân trang sản phẩm và đổi mật khẩu ở khách hàng thì các API còn lại đều phải gửi thêm jsonwebtoken _**
-
-```Ví dụ về cách sử dụng jsonwebtoken ở client:
-{
-  import axios from 'axios';
-
-  // Hàm để thêm JWT vào tiêu đề của yêu cầu
-  const addJwtToHeaders = () => {
-    // Lấy JWT từ nơi bạn lưu trữ nó (ví dụ: localStorage)
-    const jwt = localStorage.getItem('jwt');
-
-    // Tạo một instance của Axios với các cài đặt mặc định
-    const axiosInstance = axios.create();
-
-    // Thêm JWT vào tiêu đề của mỗi yêu cầu
-    axiosInstance.interceptors.request.use(config => {
-      if (jwt) {
-        config.headers.Authorization = `Bearer ${jwt}`;
-      }
-      return config;
-    });
-
-    return axiosInstance;
-  };
-
-  // Sử dụng hàm để tạo instance Axios có sẵn với JWT trong tiêu đề
-  const axiosWithJwt = addJwtToHeaders();
-
-  // Sử dụng instance đã tạo
-  axiosWithJwt.get('https://example.com/api/data')
-    .then(response => {
-      // Xử lý response
-      console.log(response.data);
-    })
-    .catch(error => {
-      // Xử lý error
-      console.error(error);
-    });
-}
-```
 
 ---
